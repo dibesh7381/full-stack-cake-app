@@ -330,5 +330,77 @@ public class AuthController {
         );
     }
 
+    @PostMapping("/cart/add")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER','SELLER')")
+    public ResponseEntity<ApiResponseDto<Void>> addToCart(
+            Authentication authentication,
+            @RequestBody AddToCartRequestDto dto
+    ) {
+
+        String email = authentication.getName();
+        authService.addToCart(email, dto);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Item added to cart", null)
+        );
+    }
+
+    @GetMapping("/cart")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER','SELLER')")
+    public ResponseEntity<ApiResponseDto<CartResponseDto>> getMyCart(
+            Authentication authentication
+    ) {
+
+        String email = authentication.getName();
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(
+                        true,
+                        "Cart loaded",
+                        authService.getMyCart(email)
+                )
+        );
+    }
+
+    @PutMapping("/cart/item/{cartItemId}")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER','SELLER')")
+    public ResponseEntity<ApiResponseDto<Void>> updateCartQuantity(
+            @PathVariable Long cartItemId,
+            @RequestBody UpdateCartQuantityRequestDto dto
+    ) {
+
+        authService.updateCartQuantity(cartItemId, dto);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Cart item quantity updated", null)
+        );
+    }
+
+    @DeleteMapping("/cart/item/{cartItemId}")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER','SELLER')")
+    public ResponseEntity<ApiResponseDto<Void>> removeCartItem(
+            @PathVariable Long cartItemId
+    ) {
+
+        authService.removeCartItem(cartItemId);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Cart item removed", null)
+        );
+    }
+
+    @DeleteMapping("/cart/clear")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER','SELLER')")
+    public ResponseEntity<ApiResponseDto<Void>> clearMyCart(
+            Authentication authentication
+    ) {
+
+        String email = authentication.getName();
+        authService.clearMyCart(email);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Cart cleared successfully", null)
+        );
+    }
 
 }

@@ -681,5 +681,157 @@ public class AuthService {
                 size
         );
     }
+
+    private Long getOrCreateCart(Long customerId) {
+
+        try {
+            return ((Number) em.createNativeQuery("""
+            SELECT id FROM cart WHERE customer_id = :cid
+        """)
+                    .setParameter("cid", customerId)
+                    .getSingleResult()).longValue();
+
+        } catch (NoResultException e) {
+
+            return ((Number) em.createNativeQuery("""
+            INSERT INTO cart (customer_id)
+            VALUES (:cid)
+            RETURNING id
+        """)
+                    .setParameter("cid", customerId)
+                    .getSingleResult()).longValue();
+        }
+    }
+
+    @Transactional
+    public void addToCart(String email, AddToCartRequestDto dto) {
+
+        Long customerId = ((Number) em.createNativeQuery("""
+        SELECT id FROM users WHERE email = :email
+    """)
+                .setParameter("email", email)
+                .getSingleResult()).longValue();
+
+        Long cartId = getOrCreateCart(customerId);
+
+        Double price = ((Number) em.createNativeQuery("""
+        SELECT price FROM cakes WHERE id = :cakeId
+    """)
+                .setParameter("cakeId", dto.getCakeId())
+                .getSingleResult()).doubleValue();
+
+        em.createNativeQuery("""
+        INSERT INTO cart_items (cart_id, cake_id, quantity, price)
+        VALUES (:cartId, :cakeId, :qty, :price)
+        ON CONFLICT (cart_id, cake_id)
+        DO UPDATE SET quantity = cart_items.quantity + :qty
+    """)
+                .setParameter("cartId", cartId)
+                .setParameter("cakeId", dto.getCakeId())
+                .setParameter("qty", dto.getQuantity())
+                .setParameter("price", price)
+                .executeUpdate();
+    }
+
+    @Transactional(readOnly = true)
+    public CartResponseDto getMyCart(String email) {
+
+        Long customerId = ((Number) em.createNativeQuery("""
+        SELECT id FROM users WHERE email = :email
+    """)
+                .setParameter("email", email)
+                .getSingleResult()).longValue();
+
+        Long cartId = getOrCreateCart(customerId);
+
+        List<Object[]> rows = em.createNativeQuery("""
+        SELECT
+          ci.id,           -- 0 cartItemId
+          c.id,            -- 1 cakeId
+          c.cake_type,     -- 2 cakeType
+          c.image_url,     -- 3 ✅ imageUrl
+          ci.price,        -- 4 price
+          ci.quantity      -- 5 quantity
+        FROM cart_items ci
+        JOIN cakes c ON c.id = ci.cake_id
+        WHERE ci.cart_id = :cartId
+        ORDER BY ci.id DESC
+    """)
+                .setParameter("cartId", cartId)
+                .getResultList();
+
+        List<CartItemResponseDto> items = new ArrayList<>();
+        double grandTotal = 0;
+
+        for (Object[] r : rows) {
+
+            double price = ((Number) r[4]).doubleValue();
+            int quantity = ((Number) r[5]).intValue();
+            double total = price * quantity;
+            grandTotal += total;
+
+            items.add(new CartItemResponseDto(
+                    ((Number) r[0]).longValue(), // cartItemId
+                    ((Number) r[1]).longValue(), // cakeId
+                    (String) r[2],               // cakeType
+                    (String) r[3],               // ✅ imageUrl
+                    price,
+                    quantity,
+                    total
+            ));
+        }
+
+        return new CartResponseDto(cartId, items, grandTotal);
+    }
+
+
+    @Transactional
+    public void updateCartQuantity(
+            Long cartItemId,
+            UpdateCartQuantityRequestDto dto
+    ) {
+        if (dto.getQuantity() <= 0) {
+            removeCartItem(cartItemId);
+            return;
+        }
+
+        em.createNativeQuery("""
+        UPDATE cart_items
+        SET quantity = :qty
+        WHERE id = :id
+    """)
+                .setParameter("qty", dto.getQuantity())
+                .setParameter("id", cartItemId)
+                .executeUpdate();
+    }
+
+    @Transactional
+    public void removeCartItem(Long cartItemId) {
+        em.createNativeQuery("""
+        DELETE FROM cart_items WHERE id = :id
+    """)
+                .setParameter("id", cartItemId)
+                .executeUpdate();
+    }
+
+    @Transactional
+    public void clearMyCart(String email) {
+
+        Long customerId = ((Number) em.createNativeQuery("""
+        SELECT id FROM users WHERE email = :email
+    """)
+                .setParameter("email", email)
+                .getSingleResult()).longValue();
+
+        em.createNativeQuery("""
+        DELETE FROM cart_items
+        WHERE cart_id = (
+            SELECT id FROM cart WHERE customer_id = :cid
+        )
+    """)
+                .setParameter("cid", customerId)
+                .executeUpdate();
+    }
+
 }
 
