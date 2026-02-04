@@ -334,6 +334,98 @@ public class AuthController {
                 new ApiResponseDto<>(true, "Cart cleared", response)
         );
     }
+
+    // ================= ORDER =================
+    @PostMapping("/order")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponseDto<OrderResponseDto>> placeOrder(
+            Authentication authentication,
+            @RequestBody PlaceOrderRequestDto request
+    ) {
+
+        String userId = authentication.getPrincipal().toString();
+
+        OrderResponseDto response =
+                authService.placeOrder(userId, request);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Order placed successfully", response)
+        );
+    }
+
+    // ================= MY ORDERS =================
+    @GetMapping("/orders")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponseDto<List<OrderResponseDto>>> getMyOrders(
+            Authentication authentication
+    ) {
+
+        String userId = authentication.getPrincipal().toString();
+
+        List<OrderResponseDto> response =
+                authService.getMyOrders(userId);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Orders fetched successfully", response)
+        );
+    }
+
+    // ================= CANCEL ORDER =================
+    @DeleteMapping("/order/{orderId}")
+    @PreAuthorize("hasAuthority('CUSTOMER')")
+    public ResponseEntity<ApiResponseDto<String>> cancelOrderByCustomer(
+            Authentication authentication,
+            @PathVariable String orderId
+    ) {
+
+        String userId = authentication.getPrincipal().toString();
+
+        String response =
+                authService.cancelOrderByCustomer(userId, orderId);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, response, null)
+        );
+    }
+
+    @DeleteMapping("/seller/order/{orderId}")
+    @PreAuthorize("hasAuthority('SELLER')")
+    public ResponseEntity<ApiResponseDto<String>> cancelOrderBySeller(
+            Authentication authentication,
+            @PathVariable String orderId
+    ) {
+
+        String sellerId = authentication.getPrincipal().toString();
+
+        String response =
+                authService.cancelOrderBySeller(sellerId, orderId);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, response, null)
+        );
+    }
+
+
+    // ================= SELLER ORDERS =================
+    @GetMapping("/seller/orders")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponseDto<List<SellerOrderResponseDto>>> getSellerOrders(
+            Authentication authentication
+    ) {
+
+        String sellerId = authentication.getPrincipal().toString();
+
+        List<SellerOrderResponseDto> response =
+                authService.getSellerOrders(sellerId);
+
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Seller orders fetched successfully", response)
+        );
+    }
+
+
+
+
 }
 
 

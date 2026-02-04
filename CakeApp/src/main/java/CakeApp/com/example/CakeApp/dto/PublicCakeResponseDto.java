@@ -8,11 +8,15 @@ import lombok.Data;
 public class PublicCakeResponseDto {
 
     private String id;
+    private String sellerId;   // ADD THIS
+
     private String cakeName;
     private String cakeFlavour;
     private double cakeWeight;
     private double cakePrice;
     private String cakeImageUrl;
     private String shopName;
+    private String shopPhone;
 }
+
 
