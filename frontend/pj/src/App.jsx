@@ -8,8 +8,11 @@ import Profile from "./pages/Profile";
 import BecomeSeller from "./pages/BecomeSeller";
 import CreateShop from "./pages/CreateShop";
 import SellerDashboard from "./pages/SellerDashboard";
+import SellerOrders from "./pages/SellerOrders"; // ← add this
 import AllCakes from "./pages/AllCakes";
-import Cart from "./pages/Cart"; // 🛒 CART PAGE
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import MyOrders from "./pages/MyOrders";
 
 import PrivateRoute from "./routes/PrivateRoute";
 import CustomerRoute from "./routes/CustomerRoute";
@@ -36,7 +39,7 @@ export default function App() {
           }
         />
 
-        {/* 🌍 ALL CAKES (LOGGED-IN USERS ONLY) */}
+        {/* 🌍 ALL CAKES */}
         <Route
           path="/cakes"
           element={
@@ -46,12 +49,32 @@ export default function App() {
           }
         />
 
-        {/* 🛒 CART (LOGGED-IN USERS ONLY) */}
+        {/* 🛒 CART */}
         <Route
           path="/cart"
           element={
             <PrivateRoute>
               <Cart />
+            </PrivateRoute>
+          }
+        />
+
+        {/* 🧾 CHECKOUT */}
+        <Route
+          path="/checkout"
+          element={
+            <PrivateRoute>
+              <Checkout />
+            </PrivateRoute>
+          }
+        />
+
+        {/* 👤 MY ORDERS */}
+        <Route
+          path="/my-orders"
+          element={
+            <PrivateRoute>
+              <MyOrders />
             </PrivateRoute>
           }
         />
@@ -80,13 +103,25 @@ export default function App() {
           }
         />
 
-        {/* 🧑‍🍳 SELLER - cakes dashboard */}
+        {/* 🧑‍🍳 SELLER - dashboard */}
         <Route
           path="/seller/dashboard"
           element={
             <PrivateRoute>
               <SellerRoute>
                 <SellerDashboard />
+              </SellerRoute>
+            </PrivateRoute>
+          }
+        />
+
+        {/* 🧑‍🍳 SELLER - orders */}
+        <Route
+          path="/seller/orders"
+          element={
+            <PrivateRoute>
+              <SellerRoute>
+                <SellerOrders />
               </SellerRoute>
             </PrivateRoute>
           }

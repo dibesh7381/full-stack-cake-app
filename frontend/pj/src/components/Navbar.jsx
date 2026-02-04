@@ -29,10 +29,8 @@ export default function Navbar() {
   // 🔥 SYNC CART WITH AUTH STATE
   useEffect(() => {
     if (token) {
-      // user logged in → load cart
       dispatch(fetchCart());
     } else {
-      // user logged out → clear cart
       dispatch(resetCart());
     }
   }, [token, dispatch]);
@@ -42,6 +40,15 @@ export default function Navbar() {
     localStorage.removeItem("token");
     setOpen(false);
     navigate("/login");
+  };
+
+  // ================= MY ORDERS NAVIGATION =================
+  const handleMyOrders = () => {
+    if (role === "SELLER") {
+      navigate("/seller/orders");
+    } else {
+      navigate("/my-orders");
+    }
   };
 
   return (
@@ -63,6 +70,13 @@ export default function Navbar() {
 
             {token && <Link to="/cakes">Cakes</Link>}
 
+            {/* My Orders hidden for seller */}
+            {token && role !== "SELLER" && (
+              <button onClick={handleMyOrders}>
+                My Orders
+              </button>
+            )}
+
             <Link to="/profile">Profile</Link>
 
             {role === "CUSTOMER" && (
@@ -73,10 +87,11 @@ export default function Navbar() {
               <>
                 <Link to="/seller/shop">My Shop</Link>
                 <Link to="/seller/dashboard">Dashboard</Link>
+                <Link to="/seller/orders">Seller Orders</Link>
               </>
             )}
 
-            {/* 🛒 CART → ALWAYS BEFORE LOGOUT */}
+            {/* 🛒 CART */}
             {token && (
               <Link to="/cart" className="relative flex items-center">
                 <ShoppingCart size={28} />
@@ -127,7 +142,8 @@ export default function Navbar() {
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-60 bg-white z-50 transition-transform
+        className={`fixed top-0 right-0 h-full w-60 bg-white z-50
+        transform transition-transform duration-300 ease-in-out
         ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex justify-between p-4 border-b">
@@ -138,12 +154,27 @@ export default function Navbar() {
         </div>
 
         <div className="flex flex-col gap-4 p-5 text-sm">
-          <Link to="/" onClick={() => setOpen(false)}>Home</Link>
+          <Link to="/" onClick={() => setOpen(false)}>
+            Home
+          </Link>
 
           {token && (
             <Link to="/cakes" onClick={() => setOpen(false)}>
               Cakes
             </Link>
+          )}
+
+          {/* My Orders hidden for seller */}
+          {token && role !== "SELLER" && (
+            <button
+              onClick={() => {
+                setOpen(false);
+                handleMyOrders();
+              }}
+              className="text-left"
+            >
+              My Orders
+            </button>
           )}
 
           <Link to="/profile" onClick={() => setOpen(false)}>
@@ -163,6 +194,9 @@ export default function Navbar() {
               </Link>
               <Link to="/seller/dashboard" onClick={() => setOpen(false)}>
                 Dashboard
+              </Link>
+              <Link to="/seller/orders" onClick={() => setOpen(false)}>
+                Seller Orders
               </Link>
             </>
           )}

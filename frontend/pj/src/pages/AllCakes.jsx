@@ -4,6 +4,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCart, addToCart } from "../redux/slices/cartSlice";
+import { useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://localhost:8080/api/auth";
 
@@ -12,6 +13,7 @@ export default function AllCakes() {
   const [loadingCakeId, setLoadingCakeId] = useState(null);
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // ✅ cart items from Redux
   const cartItems = useSelector((state) => state.cart.items);
@@ -25,10 +27,14 @@ export default function AllCakes() {
   if (token) {
     try {
       const decoded = jwtDecode(token);
-      currentUserId = decoded.sub;
+
+      // 🔥 safe userId extraction
+      currentUserId =
+        decoded.sub || decoded.id || decoded.userId || null;
+
       role = decoded.role;
     } catch (err) {
-       console.log(err)
+      console.log(err);
     }
   }
 
@@ -61,6 +67,16 @@ export default function AllCakes() {
     }
   };
 
+  // ================= BUY NOW =================
+  const handleBuyNow = (cakeId) => {
+    navigate("/checkout", {
+      state: {
+        cakeId: cakeId,
+        quantity: 1,
+      },
+    });
+  };
+
   return (
     <div className="pt-20 px-4 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -78,12 +94,16 @@ export default function AllCakes() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {cakes.map((cake) => {
             const isOwnCake =
-              role === "SELLER" && cake.sellerId === currentUserId;
+              role === "SELLER" &&
+              String(cake.sellerId) === String(currentUserId);
 
             const isInCart = cartCakeIds.has(cake.id);
 
-            const isDisabled =
+            // disable logic
+            const isAddDisabled =
               isOwnCake || isInCart || loadingCakeId === cake.id;
+
+            const isBuyDisabled = isOwnCake;
 
             return (
               <div
@@ -116,17 +136,21 @@ export default function AllCakes() {
                     🏪 {cake.shopName}
                   </p>
 
+                  <p className="text-sm text-gray-500">
+                    📞 {cake.shopPhone}
+                  </p>
+
                   <p className="text-xl font-extrabold text-gray-800 mt-2">
                     ₹ {cake.cakePrice}
                   </p>
 
                   <div className="flex gap-3 mt-4">
                     <button
-                      disabled={isDisabled}
+                      disabled={isAddDisabled}
                       onClick={() => handleAddToCart(cake.id)}
                       className={`flex-1 py-2 rounded-lg text-sm font-semibold transition
                       ${
-                        isDisabled
+                        isAddDisabled
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-indigo-600 text-white hover:bg-indigo-700"
                       }`}
@@ -139,10 +163,11 @@ export default function AllCakes() {
                     </button>
 
                     <button
-                      disabled={isOwnCake}
+                      disabled={isBuyDisabled}
+                      onClick={() => handleBuyNow(cake.id)}
                       className={`flex-1 py-2 rounded-lg text-sm font-semibold
                       ${
-                        isOwnCake
+                        isBuyDisabled
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-pink-600 text-white hover:bg-pink-700"
                       }`}
